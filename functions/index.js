@@ -7,6 +7,14 @@ const adminsDoc = db.doc("/root/internal/user-groups/admins");
 
 // give admin permissions to another user
 exports.addAdminUser = functions.https.onCall((data, context) => {
+  const email = context.auth.token.email;
+  let authorized = await isAuthorized(email);
+  if (!authorized) {
+    throw new functions.https.HttpsError('permission-denied', `User ${email} is not authorized to use admin permissions.`);
+  }
+
+  await makeAuthorized(data.email);
+  return { result: `User ${data.email} has been given admin permissions.` };
 });
 
 
@@ -49,7 +57,9 @@ async function isAuthorized(email) {
 
 // set user as being authorized
 async function makeAuthorized(email) {
-
+  const update = {};
+  update[`${email}`] = null;
+  await adminsDoc.update(update);
 }
 
 // Create and Deploy Your First Cloud Functions

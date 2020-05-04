@@ -38,8 +38,7 @@ async function setAdmin(email) {
 async function isAuthorized(email) {
   let doc = await adminsDoc.get();
   if(!doc.exists) {
-    let err = "admin doc is missing.";
-    throw(err);
+    throw new functions.https.HttpsError('permission-denied', `User ${email} is not authorized to use admin permissions.`);
   }
   else {
     const dat = doc.data();

@@ -6,7 +6,7 @@ const db = admin.firestore();
 const adminsDoc = db.doc("/root/internal/user-groups/admins");
 
 // give admin permissions to another user
-exports.addAdminUser = functions.https.onCall((data, context) => {
+exports.addAdminUser = functions.https.onCall(async (data, context) => {
   const email = context.auth.token.email;
   let authorized = await isAuthorized(email);
   if (!authorized) {
@@ -33,6 +33,9 @@ exports.grantAdminPermissions = functions.https.onCall(async (data, context) => 
   await setAdmin(email);
   return { result: `User ${email} has been given admin permissions.` };
 });
+
+// check if user is authorized
+exports.isAuthorized = isAuthorized
 
 // set a given user as an admin
 async function setAdmin(email) {

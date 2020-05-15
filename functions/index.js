@@ -5,6 +5,17 @@ admin.initializeApp();
 const db = admin.firestore();
 const adminsDoc = db.doc("/root/internal/user-groups/admins");
 
+const paths ={
+  pendingPosts: 'root/pending/posts/',
+  publicPosts: 'root/public/posts/',
+
+  publicAttachments: 'root/public/',
+  pendingAttachments: 'root/pending/',
+
+  pendingEdits: 'root/pending/edit/'
+}
+
+
 // give admin permissions to another user
 exports.addAdminUser = functions.https.onCall(async (data, context) => {
   const email = context.auth.token.email;
@@ -29,7 +40,7 @@ exports.grantAdminPermissions = functions.https.onCall(async (data, context) => 
 });
 
 // check if user is authorized
-exports.isAuthorized = functions.https.onCall(async (data, context) => isAuthorized(context.auth.token.email))
+exports.isAuthorized = functions.https.onCall(async (data, context) => isAuthorized(context.auth.token.email));
 
 // set a given user as an admin
 async function setAdmin(email) {
@@ -62,4 +73,13 @@ async function makeAuthorized(email) {
 // Create and Deploy Your First Cloud Functions
 exports.helloWorld = functions.https.onRequest((request, response) => {
  response.send("Hello from Firebase!");
+});
+
+// handle deletions of public posts: deleting pending edits of deleted public posts
+exports.deletePendingEditsOnPublicDeletion = functions.firestore
+  .document(`${paths.publicPosts}{postId}`)
+  .onDelete((snap, context) => {
+    const data = snap.data();
+    const id = data.id;
+    db.doc(`${paths.pendingPosts}${id}`).delete();
 });

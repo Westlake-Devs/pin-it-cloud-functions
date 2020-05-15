@@ -8,10 +8,7 @@ const adminsDoc = db.doc("/root/internal/user-groups/admins");
 // give admin permissions to another user
 exports.addAdminUser = functions.https.onCall(async (data, context) => {
   const email = context.auth.token.email;
-  let authorized = await isAuthorized(email);
-  if (!authorized) {
-    throw new functions.https.HttpsError('permission-denied', `User ${email} is not authorized to use admin permissions.`);
-  }
+  await isAuthorized(email);
 
   await makeAuthorized(data.email);
   return { result: `User ${data.email} has been given admin permissions.` };
@@ -25,17 +22,14 @@ exports.grantAdminPermissions = functions.https.onCall(async (data, context) => 
     return { result: `User ${email} is already given admin permissions.` };
   }
 
-  let authorized = await isAuthorized(email);
-  if (!authorized) {
-    throw new functions.https.HttpsError('permission-denied', `User ${email} is not authorized to use admin permissions.`);
-  }
+  await isAuthorized(email);
 
   await setAdmin(email);
   return { result: `User ${email} has been given admin permissions.` };
 });
 
 // check if user is authorized
-exports.isAuthorized = isAuthorized
+exports.isAuthorized = functions.https.onCall(async (data, context) => isAuthorized(context.auth.token.email))
 
 // set a given user as an admin
 async function setAdmin(email) {
@@ -54,7 +48,7 @@ async function isAuthorized(email) {
   else {
     const dat = doc.data();
     console.log(`retrieved admins doc:\n${dat}`);
-    return email in dat;
+    if (!(email in dat)) throw new functions.https.HttpsError('permission-denied', `User ${email} is not authorized to use admin permissions.`);
   }
 }
 

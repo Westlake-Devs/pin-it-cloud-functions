@@ -29,10 +29,6 @@ exports.addAdminUser = functions.https.onCall(async (data, context) => {
 // give admin permissions to user requesting for permissions, if that user is authorized
 exports.grantAdminPermissions = functions.https.onCall(async (data, context) => {
   const email = context.auth.token.email;
-  if (context.auth.token.admin) {
-    return { result: `User ${email} is already given admin permissions.` };
-  }
-
   await isAuthorized(email);
 
   await setAdmin(email);
